@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "femur",
+    "femur-client",
+    "femur-server",
+]
