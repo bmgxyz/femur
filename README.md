@@ -13,36 +13,37 @@ This software comes in three parts:
     the client and server
 
 Currently the client doesn't do anything; you're better off just using `curl`
-for now.
+for now. See usage examples below.
 
 As for the server, it only supports single user queries and setting non-avatar
-fields. It breaks the spec in lots of ways, but maybe someday it won't. Notably,
-the server **does not support TLS or auth yet so anyone can set anyone else's
-status**. Don't use this code for anything important. These are the next areas I
-want to work on.
+fields. It breaks the spec in lots of ways, but maybe someday it won't. However,
+the server does support auth via `argon2` and TLS. You still shouldn't use this
+code for anything important.
 
 To run the server:
 
  1) Install [Rust](https://rustup.rs/).
- 2) Run with `cargo run -p femur-server`.
+ 2) Run with `cargo run -p femur-server -- --help` to see the help text.
+ 3) Either run with `--no-tls` or supply a TLS keypair according to the help
+    text.
 
 The server is hard-coded to bind on `0.0.0.0:23856`. In the future I intend to
 make it possible to configure this without recompiling.
 
-Note that the server stores statuses in text files in the directory where you
-run it. Eventually, I intend to make this configurable also.
+Note that the server stores statuses and the auth database in text files in the
+directory where you run it. Eventually, I intend to make this configurable also.
 
 To interact with the server:
 
 ```
-$ curl localhost:23856/fmrl/users/@alice@localhost
+$ curl localhost:23856/fmrl/users/alice
 {"avatar":null,"name":null,"status":"hello, femur!","emoji":null,"media":null,"media_type":null}
 ```
 
 For better formatting, try Python:
 
 ```
-$ curl -s localhost:23856/fmrl/users/@bradley@localhost | python3 -m json.tool
+$ curl -s localhost:23856/fmrl/users/alice | python3 -m json.tool
 {
     "avatar": null,
     "name": null,
@@ -53,11 +54,18 @@ $ curl -s localhost:23856/fmrl/users/@bradley@localhost | python3 -m json.tool
 }
 ```
 
+To add a user:
+
+```
+$ echo "username $(echo -n "password" | argon2 salt-goes-here -e)" >> auth-db
+```
+
 To set your status:
 
 ```
-$ curl localhost:23856/fmrl/users/@bradley@localhost -X PUT -d '{"status": "updated status"}'
-$ curl -s localhost:23856/fmrl/users/@bradley@localhost | python3 -m json.tool
+$ curl localhost:23856/fmrl/users/bob -X PUT -d '{"status": "updated status"}' \
+    --header "Authorization: Basic $(echo -n "bob:password" | base64)"
+$ curl -s localhost:23856/fmrl/users/bob | python3 -m json.tool
 {
     "avatar": null,
     "name": null,
