@@ -27,8 +27,9 @@ To run the server:
  3) Either run with `--no-tls` or supply a TLS keypair according to the help
     text.
 
-The server is hard-coded to bind on `0.0.0.0:23856`. In the future I intend to
-make it possible to configure this without recompiling.
+The server listens on `0.0.0.0:443` by default. If you pass `--no-tls`, then the
+default is `0.0.0.0:80`. You may also pass `--listen <ADDRESS>` to listen on
+some other address and port, such as `--listen localhost:23856`.
 
 Note that the server stores statuses and the auth database in text files in the
 directory where you run it. Eventually, I intend to make this configurable also.

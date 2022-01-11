@@ -102,18 +102,25 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .required_unless_present("no-tls")
                 .conflicts_with("no-tls"),
         )
+        .arg(
+            Arg::new("listen")
+                .help("Address to listen on")
+                .takes_value(true)
+                .long("listen")
+                .default_value_if("no-tls", None, Some("0.0.0.0:80"))
+                .default_value("0.0.0.0:443"),
+        )
         .get_matches();
-    // TODO: make listening address and port configurable
     // TODO: handle error cases gracefully
     let server = if args.is_present("no-tls") {
         println!("Found --no-tls, running in plaintext mode --- ALL TRAFFIC IS UNENCRYPTED");
-        Server::http("0.0.0.0:23856").unwrap()
+        Server::http(args.value_of("listen").unwrap()).unwrap()
     } else {
         let ssl_config = SslConfig {
             certificate: std::fs::read(std::path::Path::new(&args.value_of("tls-cert").unwrap()))?,
             private_key: std::fs::read(std::path::Path::new(&args.value_of("tls-key").unwrap()))?,
         };
-        Server::https("0.0.0.0:23856", ssl_config).unwrap()
+        Server::https(args.value_of("listen").unwrap(), ssl_config).unwrap()
     };
     loop {
         match server.recv()? {
