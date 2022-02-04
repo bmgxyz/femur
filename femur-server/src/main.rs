@@ -124,58 +124,63 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     loop {
         match server.recv()? {
-            mut r if r.url().starts_with("/fmrl/users") => {
+            // robots.txt
+            r if r.url().starts_with("/robots.txt") && r.method() == &Method::Get => {
+                todo!();
+            },
+            // CORS compliance
+            r if r.method() == &Method::Options => {
+                todo!();
+            },
+            // status query
+            r if r.url().starts_with("/.well-known/fmrl/users") && r.method() == &Method::Get => {
+                todo!();
+            }
+            // set status field(s)
+            r if r.url().starts_with("/.well-known/fmrl/user/") && r.method() == &Method::Patch => {
+                todo!();
+            }
+            // set or delete avatar
+            r if r.url().starts_with("/.well-known/fmrl/user/") && r.url().ends_with("/avatar") => {
                 match r.method() {
-                    Method::Get => {
-                        if r.url().contains('?') {
-                            // TODO: implement batch query
-                            not_implemented(r, "Batch queries are not implemented (yet)")?;
-                        } else {
-                            let username = r.url().trim_start_matches("/fmrl/users/");
-                            match get_status_by_user(username) {
-                                // single user query
-                                Ok(status) => {
-                                    r.respond(Response::from_string(status.to_string()))?
-                                }
-                                // TODO: improve error handling
-                                Err(e) => r.respond(
-                                    Response::from_string(e.to_string())
-                                        .with_status_code(StatusCode(500)),
-                                )?,
-                            }
-                        }
-                    }
+                    // set avatar
                     Method::Put => {
-                        if r.url().ends_with("avatar") {
-                            // TODO: implement setting avatar
-                            not_implemented(r, "Avatar updates are not implemented (yet)")?;
-                        } else {
-                            // set status field(s)
-                            if authorize_and_authenticate_user(&r)? {
-                                let username =
-                                    r.url().trim_start_matches("/fmrl/users/").to_string();
-                                let mut update_string = String::new();
-                                r.as_reader().read_to_string(&mut update_string)?;
-                                let update = update_string.parse()?;
-                                set_status_by_user(&username, update)?;
-                                r.respond(Response::empty(StatusCode(200)))?;
-                            } else {
-                                r.respond(Response::empty(StatusCode(401)))?;
-                            }
-                        }
+                        todo!();
                     }
-                    _ => r.respond(
-                        Response::from_string("Method not allowed for '/fmrl/users'")
-                            .with_status_code(StatusCode(405)),
-                    )?,
+                    // delete avatar
+                    Method::Delete => {
+                        todo!();
+                    }
+                    _ => {
+                        r.respond(
+                            Response::from_string("Invalid method for avatar operations")
+                                .with_status_code(StatusCode(400)),
+                        )?;
+                    }
+                };
+            }
+            r if r.url().starts_with("/.well-known/fmrl/user/")
+                && r.url().ends_with("/following") =>
+            {
+                match r.method() {
+                    // get following
+                    Method::Get => {
+                        todo!();
+                    }
+                    // set following
+                    Method::Patch => {
+                        todo!();
+                    }
+                    _ => {
+                        r.respond(
+                            Response::from_string("Invalid method for following operations")
+                                .with_status_code(StatusCode(405)),
+                        )?;
+                    }
                 }
             }
-            r if r.method() == &Method::Get && r.url().starts_with("/fmrl/new") => {
-                // TODO: implement delta query
-                not_implemented(r, "Delta queries are not implemented (yet)")?;
-            }
             r => r.respond(
-                Response::from_string("Invalid path or method").with_status_code(StatusCode(400)),
+                Response::from_string("Invalid path or method").with_status_code(StatusCode(405)),
             )?,
         };
     }
